@@ -1,10 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	
 	"github.com/RoughCookiexx/gg_elevenlabs"
@@ -12,35 +10,15 @@ import (
 	"github.com/RoughCookiexx/twitch_chat_subscriber"
 )
 
-var Users = make(map[string]string)
-
-func outburst(message string)(string) {
-	userName, err := getUserName(message)
-	if err != nil {
-		fmt.Println("Display name not found.")
-		return ""
-	}
+func slide(message string)(string) {
 	message = afterLastColon(message)
-	voiceId, exists := Users[userName]
-	if !exists {
-		voiceId, _ = SelectRandomVoiceID()
-		Users[userName] = voiceId
-		fmt.Printf("Assigned voice id %s to user %s", voiceId, userName)
-	}	
-
-	voiceResponse := gg_eleven.TextToSpeech(voiceId, message)
-	sse.SendBytes(voiceResponse)
-	return ""
-}
-
-func getUserName(msg string) (string, error) {
-	re := regexp.MustCompile(`display-name=([^;]+)`)
-	match := re.FindStringSubmatch(msg)
-	if len(match) > 1 {
-		return match[1], nil
-	} else {
-		return "", errors.New("Display name not found")	
+	soundEffect, err := gg_eleven.GenerateSoundEffect(message)
+	if err != nil {
+		fmt.Println("OH DANG!")
 	}
+	sse.SendBytes(soundEffect)
+	
+	return ""
 }
 
 func afterLastColon(s string) string {
@@ -54,8 +32,8 @@ func afterLastColon(s string) string {
 func main() {
 	fmt.Println("Subscribing to chat messages")
 	targetURL := "http://0.0.0.0:6969/subscribe"
-	filterPattern := "PRIVMSG"
-	twitch_chat_subscriber.SendRequestWithCallbackAndRegex(targetURL, outburst, filterPattern, 6972)
+	filterPattern := "custom-reward-id=c235c8fc-5e69-4b20-b7c7-84a54d5c73f6"
+	twitch_chat_subscriber.SendRequestWithCallbackAndRegex(targetURL, slide, filterPattern, 6973)
 	sse.Start()
-	http.ListenAndServe((":6972"), nil)
+	http.ListenAndServe((":6973"), nil)
 }
